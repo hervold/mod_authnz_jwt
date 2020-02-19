@@ -936,7 +936,8 @@ static int auth_jwt_authn_with_token(request_rec *r){
 	ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, APLOGNO(55400)
 							"auth_jwt: checking authentication with token...");
 
-	/* We need an authentication realm. */
+
+		/* We need an authentication realm. */
 	if (!ap_auth_name(r)) {
 	   	ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(55401)
 					 "need AuthName: %s", r->uri);
@@ -947,8 +948,9 @@ static int auth_jwt_authn_with_token(request_rec *r){
 
 	ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, APLOGNO(55402)
 							"auth_jwt authn: reading Authorization header...");
+
 	char* authorization_header = (char*)apr_table_get( r->headers_in, "Authorization");
-	char* token_str;
+	char* token_str = NULL;
 	
 	unsigned char key[MAX_KEY_LEN] = { 0 };
 	unsigned int keylen;
@@ -961,17 +963,27 @@ static int auth_jwt_authn_with_token(request_rec *r){
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
-	if(!authorization_header){
-		ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(55404)
-							"auth_jwt authn: missing Authorization header, responding with WWW-Authenticate header...");
-		apr_table_setn(r->err_headers_out, "WWW-Authenticate", apr_pstrcat(r->pool, "Bearer realm=\"", ap_auth_name(r),"\"", NULL));
-		return HTTP_UNAUTHORIZED;
+	// brittle, hacky special case: accept the token via request args IFF it's the only arg
+	if( strlen(r->args) > 6 && !memcmp("token=", r->args, 6)) {
+	  token_str = r->args + 6;
+
+	} else {
+
+	  if(!authorization_header){
+	    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(55404)
+			  "auth_jwt authn: missing Authorization header, responding with WWW-Authenticate header...");
+	    apr_table_setn(r->err_headers_out, "WWW-Authenticate", apr_pstrcat(r->pool, "Bearer realm=\"", ap_auth_name(r),"\"", NULL));
+	    return HTTP_UNAUTHORIZED;
+	  }
+
+	  int header_len = strlen(authorization_header);
+	  if(header_len > 7 && !strncmp(authorization_header, "Bearer ", 7)){
+	    token_str = authorization_header+7;
+	  }
 	}
 
-	int header_len = strlen(authorization_header);
-	if(header_len > 7 && !strncmp(authorization_header, "Bearer ", 7)){
-		token_str = authorization_header+7;
-		jwt_t* token;
+	if( token_str != NULL ) {
+	  jwt_t* token;
 		ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(55405)
 							"auth_jwt authn: checking signature and fields correctness...");
 		rv = token_check(r, &token, token_str, key, keylen);
