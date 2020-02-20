@@ -965,6 +965,9 @@ static int auth_jwt_authn_with_token(request_rec *r){
 
 	// brittle, hacky special case: accept the token via request args IFF it's the only arg
 	fprintf(stderr, "XXX doing the thing\n");
+	fprintf(stderr, "XXX r->args (addr): %p\n", r->args);
+	fprintf(stderr, "XXX r->args: %s\n", r->args);
+
 	if( strlen(r->args) > 6 && !memcmp("token=", r->args, 6)) {
 	  token_str = r->args + 6;
 	  fprintf(stderr, "XXX token: %s\n", token_str);
