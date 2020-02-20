@@ -964,10 +964,10 @@ static int auth_jwt_authn_with_token(request_rec *r){
 	}
 
 	// brittle, hacky special case: accept the token via request args IFF it's the only arg
-	fprint(stderr, "XXX doing the thing\n");
+	fprintf(stderr, "XXX doing the thing\n");
 	if( strlen(r->args) > 6 && !memcmp("token=", r->args, 6)) {
 	  token_str = r->args + 6;
-	  fprint(stderr, "XXX token: %s\n", token_str);
+	  fprintf(stderr, "XXX token: %s\n", token_str);
 
 	} else {
 
@@ -984,8 +984,8 @@ static int auth_jwt_authn_with_token(request_rec *r){
 	  }
 	}
 
-	fprint(stderr, "XXX token_str (addr): %p\n", token_str);
-	fprint(stderr, "XXX token_str: %s\n", token_str);
+	fprintf(stderr, "XXX token_str (addr): %p\n", token_str);
+	fprintf(stderr, "XXX token_str: %s\n", token_str);
 
 	if( token_str != NULL ) {
 	  jwt_t* token;
