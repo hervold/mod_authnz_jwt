@@ -964,13 +964,8 @@ static int auth_jwt_authn_with_token(request_rec *r){
 	}
 
 	// brittle, hacky special case: accept the token via request args IFF it's the only arg
-	fprintf(stderr, "XXX doing the thing\n");
-	fprintf(stderr, "XXX r->args (addr): %p\n", r->args);
-	fprintf(stderr, "XXX r->args: %s\n", r->args);
-
-	if( strlen(r->args) > 6 && !memcmp("token=", r->args, 6)) {
+	if( r->args != NULL && strlen(r->args) > 6 && !memcmp("token=", r->args, 6)) {
 	  token_str = r->args + 6;
-	  fprintf(stderr, "XXX token: %s\n", token_str);
 
 	} else {
 
@@ -986,9 +981,6 @@ static int auth_jwt_authn_with_token(request_rec *r){
 	    token_str = authorization_header+7;
 	  }
 	}
-
-	fprintf(stderr, "XXX token_str (addr): %p\n", token_str);
-	fprintf(stderr, "XXX token_str: %s\n", token_str);
 
 	if( token_str != NULL ) {
 	  jwt_t* token;
@@ -1141,7 +1133,6 @@ static int token_check(request_rec *r, jwt_t **jwt, const char *token, const uns
 	int decode_res = token_decode(jwt, token, key, keylen);
 
 	if(decode_res != 0){
-	  fprintf(stderr, "XXXXXXXXXX token_check - token=%s, key=%s\n", token, key);
 		ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(55512)"Decoding process has failed, token is either malformed or signature is invalid");
 		apr_table_setn(r->err_headers_out, "WWW-Authenticate", apr_pstrcat(r->pool,
 		"Bearer realm=\"", ap_auth_name(r),"\", error=\"invalid_token\", error_description=\"Token is malformed or signature is invalid\"",
